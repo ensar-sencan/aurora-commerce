@@ -1,0 +1,49 @@
+databaseChangeLog:
+  # 1. Adım: Product tablosunu oluşturuyoruz
+  - changeSet:
+      id: 1-create-product-table
+      author: ensar
+      changes:
+        - createTable:
+            tableName: product
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: unit_price
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: stock
+                  type: INT
+                  constraints:
+                    nullable: false
+
+  # 2. Adım: Test yapabilmemiz için kataloğa ilk ürünü ekliyoruz
+  - changeSet:
+      id: 2-insert-aurora-mug
+      author: ensar
+      changes:
+        - insert:
+            tableName: product
+            columns:
+              - column:
+                  name: name
+                  value: "Aurora Mug"
+              - column:
+                  name: unit_price
+                  valueNumeric: 150
+              - column:
+                  name: stock
+                  valueNumeric: 50

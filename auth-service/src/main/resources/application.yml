@@ -1,0 +1,25 @@
+server:
+  port: ${PORT:8081}
+
+spring:
+  application:
+    name: auth-service
+  datasource:
+    url: ${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5433/aurora}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:dev}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: auth
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    default-schema: auth
+    liquibase-schema: auth
+
+jwt:
+  secret: ${JWT_SECRET:local-dev-secret-change-me-32bytes!}
+  # Token'ın 1 saat geçerli olması için (milisaniye cinsinden 3.600.000)
+  expiration: 3600000

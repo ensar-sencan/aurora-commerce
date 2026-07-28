@@ -1,0 +1,32 @@
+server:
+  port: ${PORT:8083}
+
+spring:
+  application:
+    name: order-service
+  datasource:
+    url: ${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5433/aurora}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:dev}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: orders
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    default-schema: orders
+    liquibase-schema: orders
+  data:
+    redis:
+      url: ${REDIS_URL:redis://localhost:6379}
+
+# JWT Güvenlik Şifresi (auth-service ile tamamen aynı olmak zorunda)
+jwt:
+  secret: ${JWT_SECRET:local-dev-secret-change-me-32bytes!}
+
+# Product Service ile iletişim ayarları (FeignClient için)
+product-service:
+  url: ${PRODUCT_SERVICE_URL:http://localhost:8082}
+  internal-token: ${INTERNAL_TOKEN:local-internal-token}

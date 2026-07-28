@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-seed-demo-customer
+      author: aurora
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO auth.customers (email, password_hash)
+              VALUES ('demo@aurora.test', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HCGFGL40PNJqOoGL6EuLc')
+              ON CONFLICT (email) DO NOTHING;
+      rollback:
+        - sql: { sql: "DELETE FROM auth.customers WHERE email = 'demo@aurora.test';" }

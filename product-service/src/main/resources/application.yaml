@@ -1,0 +1,30 @@
+server:
+  port: ${PORT:8082}
+
+spring:
+  application:
+    name: product-service
+  datasource:
+    url: ${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5433/aurora}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:dev}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: product
+    show-sql: true
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    default-schema: product
+    liquibase-schema: product
+  data:
+    redis:
+      url: ${REDIS_URL:redis://localhost:6379}
+
+jwt:
+  secret: ${JWT_SECRET:local-dev-secret-change-me-32bytes!}
+
+# Order-service'in bize istek atarken kullanacağı gizli şifre
+internal-token: ${INTERNAL_TOKEN:local-internal-token}
