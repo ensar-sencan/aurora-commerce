@@ -22,7 +22,11 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health", "/error").permitAll() // Sadece sistem kontrolleri serbest
+                        .requestMatchers("/actuator/health",
+                                "/error" ,
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**" ).permitAll() // Sadece sistem kontrolleri serbest
                         .anyRequest().authenticated() // Sepet ve sipariş işlemleri KESİNLİKLE token ister
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
