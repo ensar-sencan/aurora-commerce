@@ -25,8 +25,3 @@ spring:
 # JWT Güvenlik Şifresi (auth-service ile tamamen aynı olmak zorunda)
 jwt:
   secret: ${JWT_SECRET:local-dev-secret-change-me-32bytes!}
-
-# Product Service ile iletişim ayarları (FeignClient için)
-product-service:
-  url: ${PRODUCT_SERVICE_URL:http://localhost:8082}
-  internal-token: ${INTERNAL_TOKEN:local-internal-token}
