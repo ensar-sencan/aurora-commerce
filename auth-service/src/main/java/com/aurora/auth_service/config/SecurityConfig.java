@@ -32,7 +32,13 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // REST API için CSRF kapalı
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll() // Kayıt Ol ve Giriş Yap rotaları herkese açık
+                        .requestMatchers(
+                                "/auth/**" ,
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/auth/login",
+                                "/auth/register").permitAll() // Kayıt Ol ve Giriş Yap rotaları herkese açık
                         .requestMatchers("/actuator/health").permitAll() // Health check açık olmalı
                         .anyRequest().authenticated() // Diğer TÜM rotalar Token isteyecek
                 )
