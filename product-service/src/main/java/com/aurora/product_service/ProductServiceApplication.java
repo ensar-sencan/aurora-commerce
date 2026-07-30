@@ -1,4 +1,4 @@
-package com.aurora.product_service.starter;
+package com.aurora.product_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 // Her iki güvenlik sınıfını da (Ana kapı ve Şifre üretici) devre dışı bırakıyoruz
 @SpringBootApplication(scanBasePackages = "com.aurora.product_service")
 @EnableJpaRepositories(basePackages = "com.aurora.product_service.repo")
-@EntityScan(basePackages = "com.aurora.product_service.domain")
+@EntityScan(basePackages = "com.aurora.product_service")
 @EnableCaching  //cache mekanizmasını aktif etmek için
 public class ProductServiceApplication {
 
