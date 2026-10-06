@@ -61,7 +61,7 @@ public class OrderService {
                 order.setItems(new ArrayList<>());
             }
 
-            long total = 0L;
+            long total = 0L;//L burada long tipinde olduğunu söyler tam sayı olduğunu söyler 
 
             // product-service bize GÜNCEL fiyatları verdi. Kendi sepetimize güvenmiyoruz, onları baz alıyoruz!
             for (StockDeductResponse.PricedLine pricedLine : deductResponse.lines()) {
