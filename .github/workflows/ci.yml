@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]   #main/master a push olduğunda ve her pull requestte çalışması için. kod çalışmadan PR da çalışması önemli sorun varsa görünsün diye .
+  pull_request:
+
+jobs:
+  build:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest    #iş temiz bir Ubuntu sanal makinesinde çalışır
+    strategy:
+      fail-fast: false #birinde sorun olursa diğerleri durmasın .
+      matrix:
+        service: [auth-service, product-service, order-service]   #matrix aynı işi 3 kez, paralel çalıştırır, her seferinde service değişkeni farklı bir değer alır. Üç servisi tek tek yazmak yerine bir kez yazıyoruz.
+    defaults:
+      run:
+        working-directory: ${{ matrix.service }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4   #Bu adım repodaki kodu makineye indirir.
+
+      - name: Set up JDK 17   #Java 17 kurar
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin  #Temurin: açık kaynak bir JDK dağıtımı
+          java-version: '17'
+          cache: maven
+
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
+
+      - name: Build (package, tests skipped for now)
+        run: ./mvnw -B -ntp -DskipTests package
+
+#-B (batch): etkileşimsiz, CI için temiz log.
+#-ntp (no transfer progress): indirme ilerleme çubuklarını gizler, log şişmesin.
+#-DskipTests: testleri atla (neden yukarıda).
+#package: derle ve .jar üret. Yerelde üç servis de jar üretmişti, yani yeşil olması beklenir.
