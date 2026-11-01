@@ -9,10 +9,13 @@ import com.aurora.order_service.service.client.StockDeductRequest;
 import com.aurora.order_service.service.client.StockDeductResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +30,17 @@ public class OrderService {
     private String internalToken;
 
     public Order checkout(Long customerId, String idempotencyKey) {
+
+        //İstemci her checkout için benzersiz bir Idempotency-Key gönderir. Servis ,işleme başlamadan önce bu anahtara bir siphariş var mı yok mu diye bakar , varsa aynısını döndürür.
+        Optional<Order> existing = orderRepository.findByIdempotencyKey(idempotencyKey); // Optional<Order> = BU siphariş olabilirde olmayabilirde kısmı bunu iyice ogren . null da olabilir NPE riskini azaltıyo.
+        if (existing.isPresent()){
+            Order found = existing.get();
+            if (!found.getCustomerId().equals(customerId)){
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Bu idempotency key başka bir müşteriye ait");
+            }
+            return found;
+        }
+
 
         // 1. ADIM: Müşterinin sepetini Redis'ten al
         Cart cart = cartService.getCart(customerId);
