@@ -10,7 +10,7 @@ spring:
     password: ${DB_PASSWORD:dev}
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: validate #Hibernate’e “sen tablo açma, sadece mevcut tablo entity’ye uyuyor mu kontrol et” der.
     properties:
       hibernate:
         default_schema: auth

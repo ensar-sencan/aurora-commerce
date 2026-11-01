@@ -18,12 +18,12 @@ public class JwtService {
 
     private final SecretKey key;
 
-    // Spec'e göre secret key application.yml üzerinden enjekte ediliyor[cite: 1]
+    // Spec'e göre secret key application.yml üzerinden enjekte ediliyor
     public JwtService(@Value("${jwt.secret}") String secret) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    // Token'ın içinden müşteri ID'sini (subject) okuma
+    // Token'ın içinden müşteri ID'sini  okuma
     public String extractCustomerId(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -34,7 +34,7 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    // Spec'e göre sub=customerId, claim="email", exp=1 saat olacak şekilde token oluşturma[cite: 1]
+    // Spec'e göre sub=customerId, claim="email", exp=1 saat olacak şekilde token oluşturma
     public String generateToken(Long customerId, String email) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", email);
