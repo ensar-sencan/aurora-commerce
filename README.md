@@ -1,6 +1,7 @@
 # Aurora Commerce | Dağıtık E-Ticaret Mikroservis Platformu
 
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4-brightgreen.svg?logo=springboot)
+[![CI](https://github.com/ensar-sencan/aurora-commerce/actions/workflows/ci.yml/badge.svg)](https://github.com/ensar-sencan/aurora-commerce/actions/workflows/ci.yml)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3%20%7C%204.1-brightgreen.svg?logo=springboot)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg?logo=postgresql)
 ![Redis](https://img.shields.io/badge/Redis-7-red.svg?logo=redis)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg?logo=docker)
@@ -41,7 +42,7 @@ graph TD
     Product -->|Reads/Writes| DB_Prod
     Order -->|Reads/Writes| DB_Ord
 
-    Order -->|Cart & Idempotency| Redis
+    Order -->|Cart, TTL 24h| Redis
     Order <-->|5. Feign: Deduct / Restore Stock| Product
 ```
 
@@ -71,54 +72,66 @@ Etkilenen satır sayısı `0` dönerse istek anında `OutOfStockException` ile d
 
 ### 3. Çift Tıklama Koruması (Idempotency)
 
-Kullanıcının ödeme tuşuna art arda basması veya ağdaki retry mekanizmaları sebebiyle mükerrer sipariş oluşmasını engellemek için `orders` tablosundaki `idempotency_key` alanına **unique index** konulmuştur. Checkout sırasında `saveAndFlush()` çağrısı bu index'e çarparsa (aynı anahtarla ikinci istek), veritabanı seviyesinde reddedilir ve bu hata saga telafi akışını (stok iade) otomatik olarak tetikler.
+Kullanıcının ödeme tuşuna art arda basması veya ağdaki retry mekanizmaları sebebiyle mükerrer sipariş oluşmasını engellemek için iki katmanlı koruma uygulanmıştır:
+
+- **Birinci katman (uygulama):** Checkout, iş yapmadan önce `Idempotency-Key` ile mevcut siparişi arar. Bulursa ve sahibi aynı müşteriyse **ilk siparişi aynen** döner (stok, sepet ve cache'e dokunulmaz). Anahtar başka bir müşteriye aitse `409 Conflict` döner, böylece bir müşteri başkasının siparişini göremez.
+- **Son savunma hattı (veritabanı):** `orders` tablosundaki `idempotency_key` alanında **unique index** vardır. Aynı anda gelen iki istek ilk kontrolü birlikte geçerse `saveAndFlush()` bu index'e çarpar ve hata saga telafi akışını (stok iade) tetikler.
 
 ### 4. Servisler Arası Güvenlik (Internal Token)
 
-`product-service` üzerindeki `/internal/stock/deduct` ve `/internal/stock/restore` uç noktaları dış dünyaya kapalı, yalnızca `order-service`'in erişebileceği iç uç noktalardır. Bu izolasyon, her istekte gönderilmesi zorunlu olan `X-Internal-Token` header'ı ile sağlanır; token uyuşmazsa istek reddedilir.
+`product-service` üzerindeki `/internal/stock/deduct` ve `/internal/stock/restore` uç noktaları yalnızca `order-service`'in çağırması için tasarlanmış iç uç noktalardır. `order-service` her çağrıda `X-Internal-Token` header'ını gönderir.
+
+> **Bilinen eksik:** `product-service` tarafında bu header'ı doğrulayan bir filtre henüz yoktur, yani bu uç noktalar şu an teknik olarak korumasızdır. Doğrulama filtresi yol haritasındadır (secret'ın ortam değişkeninden okunması ile birlikte).
 
 ---
 
 ## Teknoloji Yığını (Tech Stack)
 
-- **Backend:** Java 17, Spring Boot 3, Spring Data JPA, Spring Security, OpenFeign
+- **Backend:** Java 17, Spring Boot 3.3 (auth, product) / 4.1 (order), Spring Data JPA, Spring Security (auth, order), OpenFeign
+- **CI:** GitHub Actions (her push'ta üç servis için matrix build)
 - **Veritabanı & Önbellek:** PostgreSQL 16, Redis 7 (Cache-aside: `@Cacheable` / `@CacheEvict` ile ürün kataloğu önbellekleme, sepet için `@RedisHash` + TTL)
 - **Veritabanı Migrasyonu:** Liquibase (Changeset bazlı sürüm yönetimi + servis başlangıcında otomatik seed data)
 - **Kimlik Doğrulama:** JWT (JSON Web Token - HS256) tabanlı Stateless Auth
-- **Nesne Dönüşümü:** MapStruct (DTO ↔ Entity mapping)
+- **Nesne Dönüşümü:** MapStruct (DTO ↔ Entity mapping, product-service)
 - **API Dokümantasyonu:** springdoc-openapi (Swagger UI)
-- **Gözlemlenebilirlik:** Spring Boot Actuator (health check)
+- **Gözlemlenebilirlik:** Spring Boot Actuator (health check, product-service)
 - **Altyapı:** Docker (multi-stage build) & Docker Compose
 
 ---
 
 ## Kurulum ve Çalıştırma (Getting Started)
 
-Proje lokal ortamda test edilmek üzere tamamen Dockerize edilmiştir.
+Altyapı (PostgreSQL ve Redis) Docker Compose ile ayağa kalkar, servisler yerelde Maven wrapper ile çalıştırılır. Üç servisin de Dockerfile'ı hazırdır, hepsinin tek komutla Compose'a alınması yol haritasındadır.
 
 ### Ön Koşullar
 
 - Docker & Docker Compose
-- Java JDK 17+ ve Maven
+- Java JDK 17+ (Maven kurmak gerekmez, her serviste `mvnw` vardır)
 
 ### 1. Altyapıyı Başlatın (DB & Redis)
 
 Öncelikle veritabanı şemalarının ve Redis'in ayağa kalkması gerekmektedir. Ana dizinde terminali açın:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
-*(Bu işlem, PostgreSQL içinde `auth`, `product` ve `orders` şemalarını izole bir şekilde otomatik oluşturur ve Redis'i başlatır.)*
+*(Bu işlem, PostgreSQL içinde `auth`, `product` ve `orders` şemalarını izole bir şekilde otomatik oluşturur ve Redis'i başlatır. PostgreSQL makinenizde **5433** portundan, Redis **6379**'dan erişilir.)*
 
 ### 2. Mikroservisleri Ayağa Kaldırın
 
-Terminal üzerinden Maven wrapper kullanarak servisleri sırasıyla başlatın:
+Her servis ayrı bir Maven projesidir. Üç ayrı terminalde sırasıyla başlatın:
 
 ```bash
-./mvnw spring-boot:run -pl auth-service
-./mvnw spring-boot:run -pl product-service
-./mvnw spring-boot:run -pl order-service
+cd auth-service && ./mvnw spring-boot:run
+```
+
+```bash
+cd product-service && ./mvnw spring-boot:run
+```
+
+```bash
+cd order-service && ./mvnw spring-boot:run
 ```
 
 *(Uygulama ayağa kalkarken Liquibase, her servisin kendi `db.changelog-master.yaml` dosyası üzerinden tabloları ve varsayılan test verilerini otomatik olarak veritabanına işleyecektir.)*
