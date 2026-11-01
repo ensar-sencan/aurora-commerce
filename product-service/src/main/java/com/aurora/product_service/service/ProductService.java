@@ -16,7 +16,7 @@ public class ProductService {
         this.productRepository = productRepository;
     }
 
-    @Cacheable(value = "products2")    // Ürün listesini Redis'te cache'ler
+    @Cacheable(value = "products")    // Ürün listesini Redis'te cache'ler
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
